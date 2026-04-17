@@ -24,7 +24,10 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -34,11 +37,11 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,21 +59,27 @@ import com.assclk9000.app.data.model.ActionCondition
 import com.assclk9000.app.data.model.ClickAction
 import com.assclk9000.app.data.model.ConditionType
 import com.assclk9000.app.data.model.GestureType
-import com.assclk9000.app.ui.components.IntervalPicker
 import com.assclk9000.app.ui.theme.CrtGreen
 import com.assclk9000.app.ui.theme.CrtPurple
 import com.assclk9000.app.ui.theme.CrtRed
 
+/**
+ * Modal Bottom Sheet composable for editing a single [ClickAction].
+ *
+ * @param action The action to edit, or null to create a new action.
+ * @param onSave Called with the resulting [ClickAction] when the user taps Save.
+ * @param onDismiss Called when the sheet is dismissed or the user taps Cancel.
+ * @param onPickCoordinates Called when the user wants to pick coordinates on screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ActionEditorSheet(
-    sheetState: SheetState,
     action: ClickAction?,
-    profileId: Long,
     onSave: (ClickAction) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onPickCoordinates: () -> Unit
 ) {
-    // Local mutable state for editing
+    // Local mutable state for editing — initialized from the action parameter
     var gestureType by remember { mutableStateOf(action?.gestureType ?: GestureType.TAP) }
     var x by remember { mutableFloatStateOf(action?.x ?: 540f) }
     var y by remember { mutableFloatStateOf(action?.y ?: 960f) }
@@ -89,9 +98,12 @@ fun ActionEditorSheet(
         mutableFloatStateOf(action?.condition?.similarityThreshold ?: 0.9f)
     }
 
+    var showJitter by rememberSaveable { mutableStateOf(false) }
     var showConditions by rememberSaveable { mutableStateOf(false) }
 
     val isEditing = action != null
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val crtTextFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = CrtPurple,
@@ -117,14 +129,14 @@ fun ActionEditorSheet(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Title
+            // ── Title ──────────────────────────────────────────────────
             Text(
                 text = if (isEditing) "> EDIT ACTION_" else "> NEW ACTION_",
                 style = MaterialTheme.typography.titleMedium,
                 color = CrtPurple
             )
 
-            // Gesture type selector
+            // ── GestureType selector (FilterChip row) ──────────────────
             Text(
                 text = "Gesture Type",
                 style = MaterialTheme.typography.labelLarge,
@@ -155,7 +167,7 @@ fun ActionEditorSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            // Coordinate inputs
+            // ── Coordinate inputs ──────────────────────────────────────
             if (gestureType != GestureType.WAIT) {
                 Text(
                     text = "Coordinates",
@@ -163,7 +175,7 @@ fun ActionEditorSheet(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Primary coordinates
+                // Primary X / Y
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -193,11 +205,9 @@ fun ActionEditorSheet(
                     )
                 }
 
-                // "Pick on screen" button
+                // "Pick on Screen" button
                 OutlinedButton(
-                    onClick = {
-                        // TODO: Launch TargetPickerOverlay via overlay service
-                    },
+                    onClick = onPickCoordinates,
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = 48.dp),
@@ -217,8 +227,8 @@ fun ActionEditorSheet(
                     )
                 }
 
-                // Secondary coordinates for swipe/pinch
-                if (gestureType == GestureType.SWIPE || gestureType == GestureType.PINCH) {
+                // Secondary X2 / Y2 for SWIPE
+                if (gestureType == GestureType.SWIPE) {
                     Text(
                         text = "End Coordinates",
                         style = MaterialTheme.typography.labelMedium,
@@ -257,102 +267,12 @@ fun ActionEditorSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            // Duration picker
-            IntervalPicker(
-                valueMillis = duration,
-                onValueChange = { duration = it },
-                label = "Duration (hold time)"
-            )
-
-            // Interval after picker
-            IntervalPicker(
-                valueMillis = intervalAfter,
-                onValueChange = { intervalAfter = it },
-                label = "Interval After (wait time)"
-            )
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            // Jitter section
-            Text(
-                text = "Jitter (Humanization)",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            // Timing jitter slider
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Timing Jitter",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${jitterMs}ms",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = CrtPurple
-                    )
-                }
-                Slider(
-                    value = jitterMs.toFloat(),
-                    onValueChange = { jitterMs = it.toLong() },
-                    valueRange = 0f..2000f,
-                    steps = 19,
-                    colors = SliderDefaults.colors(
-                        thumbColor = CrtPurple,
-                        activeTrackColor = CrtPurple,
-                        inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = 48.dp)
-                )
-            }
-
-            // Coordinate jitter slider
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Position Jitter",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${jitterPx.toInt()}px",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = CrtPurple
-                    )
-                }
-                Slider(
-                    value = jitterPx,
-                    onValueChange = { jitterPx = it },
-                    valueRange = 0f..100f,
-                    steps = 9,
-                    colors = SliderDefaults.colors(
-                        thumbColor = CrtPurple,
-                        activeTrackColor = CrtPurple,
-                        inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = 48.dp)
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            // Repeat count
+            // ── Duration picker (OutlinedTextField with ms suffix) ─────
             OutlinedTextField(
-                value = repeatCount.toString(),
-                onValueChange = { text -> text.toIntOrNull()?.let { repeatCount = it } },
-                label = { Text("Repeat Count") },
+                value = duration.toString(),
+                onValueChange = { text -> text.toLongOrNull()?.let { duration = it } },
+                label = { Text("Duration") },
+                suffix = { Text("ms") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
@@ -361,7 +281,53 @@ fun ActionEditorSheet(
                 colors = crtTextFieldColors
             )
 
-            // Description
+            // ── Interval After picker (OutlinedTextField with ms suffix)
+            OutlinedTextField(
+                value = intervalAfter.toString(),
+                onValueChange = { text -> text.toLongOrNull()?.let { intervalAfter = it } },
+                label = { Text("Interval After") },
+                suffix = { Text("ms") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 48.dp),
+                colors = crtTextFieldColors
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            // ── Repeat count (0 = infinite, show infinity symbol) ──────
+            OutlinedTextField(
+                value = repeatCount.toString(),
+                onValueChange = { text -> text.toIntOrNull()?.let { repeatCount = it } },
+                label = { Text("Repeat Count") },
+                suffix = {
+                    if (repeatCount == 0) {
+                        Text(
+                            text = "\u221E",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = CrtGreen
+                        )
+                    }
+                },
+                supportingText = {
+                    if (repeatCount == 0) {
+                        Text(
+                            text = "0 = infinite repeats",
+                            color = CrtGreen
+                        )
+                    }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 48.dp),
+                colors = crtTextFieldColors
+            )
+
+            // ── Description ────────────────────────────────────────────
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
@@ -373,7 +339,104 @@ fun ActionEditorSheet(
                 colors = crtTextFieldColors
             )
 
-            // Condition section (expandable)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            // ── Expandable "Jitter" section ────────────────────────────
+            TextButton(
+                onClick = { showJitter = !showJitter },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = if (showJitter) Icons.Default.ExpandLess
+                    else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = CrtPurple
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Jitter (Humanization)",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = CrtPurple
+                )
+            }
+
+            AnimatedVisibility(
+                visible = showJitter,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Timing jitter slider (0–500ms)
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Timing Jitter",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${jitterMs}ms",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = CrtPurple
+                            )
+                        }
+                        Slider(
+                            value = jitterMs.toFloat(),
+                            onValueChange = { jitterMs = it.toLong() },
+                            valueRange = 0f..500f,
+                            steps = 49,
+                            colors = SliderDefaults.colors(
+                                thumbColor = CrtPurple,
+                                activeTrackColor = CrtPurple,
+                                inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp)
+                        )
+                    }
+
+                    // Position jitter slider (0–10px)
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Position Jitter",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${jitterPx.toInt()}px",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = CrtPurple
+                            )
+                        }
+                        Slider(
+                            value = jitterPx,
+                            onValueChange = { jitterPx = it },
+                            valueRange = 0f..10f,
+                            steps = 9,
+                            colors = SliderDefaults.colors(
+                                thumbColor = CrtPurple,
+                                activeTrackColor = CrtPurple,
+                                inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp)
+                        )
+                    }
+                }
+            }
+
+            // ── Expandable "Condition" section ─────────────────────────
             TextButton(
                 onClick = { showConditions = !showConditions },
                 modifier = Modifier.fillMaxWidth()
@@ -400,37 +463,58 @@ fun ActionEditorSheet(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Condition type selector
+                    // ConditionType dropdown
                     Text(
                         text = "Condition Type",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+
+                    var conditionDropdownExpanded by remember { mutableStateOf(false) }
+
+                    ExposedDropdownMenuBox(
+                        expanded = conditionDropdownExpanded,
+                        onExpandedChange = { conditionDropdownExpanded = it }
                     ) {
-                        ConditionType.entries.forEach { type ->
-                            FilterChip(
-                                selected = conditionType == type,
-                                onClick = { conditionType = type },
-                                label = {
-                                    Text(
-                                        text = conditionDisplayName(type),
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = CrtGreen,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                ),
-                                modifier = Modifier.defaultMinSize(minHeight = 48.dp)
-                            )
+                        OutlinedTextField(
+                            value = conditionDisplayName(conditionType),
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(
+                                    expanded = conditionDropdownExpanded
+                                )
+                            },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp),
+                            colors = crtTextFieldColors
+                        )
+                        ExposedDropdownMenu(
+                            expanded = conditionDropdownExpanded,
+                            onDismissRequest = { conditionDropdownExpanded = false }
+                        ) {
+                            ConditionType.entries.forEach { type ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = conditionDisplayName(type),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    },
+                                    onClick = {
+                                        conditionType = type
+                                        conditionDropdownExpanded = false
+                                    },
+                                    modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                                )
+                            }
                         }
                     }
 
+                    // Similarity threshold slider (0.5–1.0)
                     if (conditionType != ConditionType.NONE) {
-                        // Similarity threshold slider
                         Column {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -462,32 +546,13 @@ fun ActionEditorSheet(
                                     .defaultMinSize(minHeight = 48.dp)
                             )
                         }
-
-                        // Image region picker placeholder
-                        OutlinedButton(
-                            onClick = {
-                                // TODO: Launch image region picker via overlay service
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .defaultMinSize(minHeight = 48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = CrtGreen
-                            )
-                        ) {
-                            Text(
-                                text = "Select Image Region",
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
                     }
                 }
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            // Save / Cancel buttons
+            // ── Save / Cancel buttons ──────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -525,17 +590,13 @@ fun ActionEditorSheet(
 
                         val result = ClickAction(
                             id = action?.id ?: 0L,
-                            profileId = action?.profileId ?: profileId,
+                            profileId = action?.profileId ?: 0L,
                             orderIndex = action?.orderIndex ?: 0,
                             gestureType = gestureType,
                             x = x,
                             y = y,
-                            x2 = if (gestureType == GestureType.SWIPE ||
-                                gestureType == GestureType.PINCH
-                            ) x2 else null,
-                            y2 = if (gestureType == GestureType.SWIPE ||
-                                gestureType == GestureType.PINCH
-                            ) y2 else null,
+                            x2 = if (gestureType == GestureType.SWIPE) x2 else null,
+                            y2 = if (gestureType == GestureType.SWIPE) y2 else null,
                             duration = duration,
                             intervalAfter = intervalAfter,
                             jitterMs = jitterMs,

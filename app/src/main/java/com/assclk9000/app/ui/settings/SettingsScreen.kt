@@ -1,28 +1,40 @@
 package com.assclk9000.app.ui.settings
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -31,244 +43,334 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.assclk9000.app.ui.components.IntervalPicker
+import com.assclk9000.app.ui.theme.CrtGreen
+import com.assclk9000.app.ui.theme.CrtPurple
+import com.assclk9000.app.ui.theme.CrtSurfaceVariant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val theme by viewModel.theme.collectAsState()
-    val defaultInterval by viewModel.defaultInterval.collectAsState()
-    val hapticFeedback by viewModel.hapticFeedback.collectAsState()
     val overlayOpacity by viewModel.overlayOpacity.collectAsState()
     val overlaySize by viewModel.overlaySize.collectAsState()
+    val defaultInterval by viewModel.defaultInterval.collectAsState()
+    val hapticFeedback by viewModel.hapticFeedback.collectAsState()
     val discreteMode by viewModel.discreteMode.collectAsState()
     val genericNotifications by viewModel.genericNotifications.collectAsState()
-    val humanSimulationIntensity by viewModel.humanSimulationIntensity.collectAsState()
+    val humanSimulation by viewModel.humanSimulationIntensity.collectAsState()
+
+    // SAF launchers for export/import
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { viewModel.exportAllProfiles(it) }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { viewModel.importProfiles(it) }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = {
+                    Text(
+                        text = "> SETTINGS_",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        color = CrtPurple
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
-        }
-    ) { paddingValues ->
-        LazyColumn(
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // ── Appearance ──────────────────────────────────────────
-            item {
-                SectionHeader("Appearance")
-            }
+            // ================================================================
+            // APPEARANCE
+            // ================================================================
+            SectionHeader(title = "APPEARANCE")
 
-            item {
-                Text(
-                    text = "Theme",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("Dark", "Light", "System").forEach { option ->
-                        FilterChip(
-                            selected = theme == option,
-                            onClick = { viewModel.setTheme(option) },
-                            label = { Text(option) }
-                        )
-                    }
+            // Theme selector
+            SettingLabel(text = "Theme")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("dark", "light", "system").forEach { option ->
+                    FilterChip(
+                        selected = theme == option,
+                        onClick = { viewModel.setTheme(option) },
+                        label = {
+                            Text(
+                                text = option.replaceFirstChar { it.uppercase() },
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = CrtPurple,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                    )
                 }
             }
 
-            item {
-                SliderSetting(
-                    label = "Overlay Opacity",
-                    value = overlayOpacity,
-                    onValueChange = { viewModel.setOverlayOpacity(it) },
-                    valueRange = 0f..1f,
-                    displayValue = "${(overlayOpacity * 100).toInt()}%"
-                )
-            }
+            Spacer(Modifier.height(4.dp))
 
-            item {
-                SliderSetting(
-                    label = "Overlay Size",
-                    value = overlaySize,
-                    onValueChange = { viewModel.setOverlaySize(it) },
-                    valueRange = 0.5f..2.0f,
-                    displayValue = "${(overlaySize * 100).toInt()}%"
-                )
-            }
+            // Overlay opacity slider
+            SliderSetting(
+                label = "Overlay Opacity",
+                value = overlayOpacity,
+                valueLabel = "${(overlayOpacity * 100).toInt()}%",
+                onValueChange = { viewModel.setOverlayOpacity(it) },
+                valueRange = 0.1f..1.0f
+            )
 
-            // ── Behavior ────────────────────────────────────────────
-            item {
-                SectionHeader("Behavior")
-            }
+            // Overlay size slider
+            SliderSetting(
+                label = "Overlay Size",
+                value = overlaySize,
+                valueLabel = "${(overlaySize * 100).toInt()}%",
+                onValueChange = { viewModel.setOverlaySize(it) },
+                valueRange = 0.5f..2.0f
+            )
 
-            item {
-                Text(
-                    text = "Default Interval (ms)",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = defaultInterval.toString(),
-                    onValueChange = { text ->
-                        text.toLongOrNull()?.let { viewModel.setDefaultInterval(it) }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            SectionDivider()
 
-            item {
-                SwitchSetting(
-                    label = "Haptic Feedback",
-                    checked = hapticFeedback,
-                    onCheckedChange = { viewModel.setHapticFeedback(it) }
-                )
-            }
+            // ================================================================
+            // BEHAVIOR
+            // ================================================================
+            SectionHeader(title = "BEHAVIOR")
 
-            // ── Discrete Mode ───────────────────────────────────────
-            item {
-                SectionHeader("Discrete Mode")
-            }
+            // Default interval picker
+            IntervalPicker(
+                valueMillis = defaultInterval,
+                onValueChange = { viewModel.setDefaultInterval(it) },
+                label = "Default Interval"
+            )
 
-            item {
-                SwitchSetting(
-                    label = "Discrete Mode",
-                    description = "Hide floating controls, use notification only",
-                    checked = discreteMode,
-                    onCheckedChange = { viewModel.setDiscreteMode(it) }
-                )
-            }
+            Spacer(Modifier.height(4.dp))
 
-            item {
-                SwitchSetting(
-                    label = "Generic Notifications",
-                    description = "Use system-style notification text",
-                    checked = genericNotifications,
-                    onCheckedChange = { viewModel.setGenericNotifications(it) }
-                )
-            }
+            // Haptic feedback toggle
+            ToggleSetting(
+                label = "Haptic Feedback",
+                description = "Vibrate on action execution",
+                checked = hapticFeedback,
+                onCheckedChange = { viewModel.setHapticFeedback(it) }
+            )
 
-            item {
-                SliderSetting(
-                    label = "Human Simulation",
-                    description = "Adds natural variation to timing and position",
-                    value = humanSimulationIntensity,
-                    onValueChange = { viewModel.setHumanSimulationIntensity(it) },
-                    valueRange = 0f..1f,
-                    displayValue = "${(humanSimulationIntensity * 100).toInt()}%"
-                )
-            }
+            SectionDivider()
 
-            // ── Data ────────────────────────────────────────────────
-            item {
-                SectionHeader("Data")
-            }
+            // ================================================================
+            // STEALTH (Discrete Mode)
+            // ================================================================
+            SectionHeader(title = "DISCRETE MODE")
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = { /* TODO: export profiles */ },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Export All Profiles")
-                    }
-                    Button(
-                        onClick = { /* TODO: import profiles */ },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Import Profiles")
-                    }
-                }
-            }
+            // Discrete mode toggle
+            ToggleSetting(
+                label = "Discrete Mode",
+                description = "Hide floating controls, use notification only",
+                checked = discreteMode,
+                onCheckedChange = { viewModel.setDiscreteMode(it) }
+            )
 
-            // ── About ───────────────────────────────────────────────
-            item {
-                SectionHeader("About")
-            }
+            // Generic notifications toggle
+            ToggleSetting(
+                label = "Generic Notifications",
+                description = "Use system-style notification text",
+                checked = genericNotifications,
+                onCheckedChange = { viewModel.setGenericNotifications(it) }
+            )
 
-            item {
-                Column(
+            // Human simulation slider
+            SliderSetting(
+                label = "Human Simulation",
+                value = humanSimulation,
+                valueLabel = "${(humanSimulation * 100).toInt()}%",
+                description = "Adds natural variation to timing and position",
+                onValueChange = { viewModel.setHumanSimulationIntensity(it) },
+                valueRange = 0f..1f
+            )
+
+            SectionDivider()
+
+            // ================================================================
+            // DATA
+            // ================================================================
+            SectionHeader(title = "DATA")
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = { exportLauncher.launch("assclk9000_profiles.json") },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CrtPurple,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(
-                        text = "Arthritis Saver Clicker 9000",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                    Icon(
+                        imageVector = Icons.Default.Upload,
+                        contentDescription = null
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "v1.0.0",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Export All",
+                        style = MaterialTheme.typography.labelLarge
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        importLauncher.launch(arrayOf("application/json", "*/*"))
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = CrtPurple
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Made with arthritis in mind",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Import",
+                        style = MaterialTheme.typography.labelLarge
                     )
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
+            SectionDivider()
+
+            // ================================================================
+            // ABOUT
+            // ================================================================
+            SectionHeader(title = "ABOUT")
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(CrtSurfaceVariant)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AboutRow(label = "App", value = "Arthritis Saver Clicker 9000")
+                AboutRow(label = "Version", value = "1.0.0")
+                AboutRow(label = "Package", value = "com.assclk9000.app")
+                AboutRow(
+                    label = "Accessibility",
+                    value = "Uses AccessibilityService for gesture dispatch"
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Text(
+                    text = "Made with arthritis in mind",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = CrtPurple
+                )
             }
+
+            // Bottom spacing
+            Spacer(Modifier.height(32.dp))
         }
     }
 }
 
+// ============================================================================
+// Section Header
+// ============================================================================
+
 @Composable
 private fun SectionHeader(title: String) {
-    Spacer(modifier = Modifier.height(16.dp))
     Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(bottom = 4.dp)
+        text = "> $title",
+        style = MaterialTheme.typography.titleSmall.copy(
+            fontFamily = FontFamily.Monospace
+        ),
+        color = CrtPurple,
+        modifier = Modifier.padding(vertical = 4.dp)
     )
 }
 
 @Composable
-private fun SwitchSetting(
+private fun SectionDivider() {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(vertical = 8.dp)
+    )
+}
+
+// ============================================================================
+// Setting Label
+// ============================================================================
+
+@Composable
+private fun SettingLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+// ============================================================================
+// Toggle Setting
+// ============================================================================
+
+@Composable
+private fun ToggleSetting(
     label: String,
+    description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    description: String? = null
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 48.dp)
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -279,61 +381,101 @@ private fun SwitchSetting(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            if (description != null) {
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun SliderSetting(
-    label: String,
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    valueRange: ClosedFloatingPointRange<Float>,
-    displayValue: String,
-    description: String? = null
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = displayValue,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        if (description != null) {
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        Spacer(Modifier.width(16.dp))
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = CrtGreen,
+                checkedTrackColor = CrtGreen.copy(alpha = 0.3f),
+                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+    }
+}
+
+// ============================================================================
+// Slider Setting
+// ============================================================================
+
+@Composable
+private fun SliderSetting(
+    label: String,
+    value: Float,
+    valueLabel: String,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    description: String? = null,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (description != null) {
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Text(
+                text = valueLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = CrtPurple
+            )
+        }
         Slider(
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
-            modifier = Modifier.fillMaxWidth()
+            colors = SliderDefaults.colors(
+                thumbColor = CrtPurple,
+                activeTrackColor = CrtPurple,
+                inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 48.dp)
+        )
+    }
+}
+
+// ============================================================================
+// About Row
+// ============================================================================
+
+@Composable
+private fun AboutRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

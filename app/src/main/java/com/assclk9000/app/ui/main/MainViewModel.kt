@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _permissionsGranted = MutableStateFlow(false)
@@ -23,12 +23,16 @@ class MainViewModel @Inject constructor(
         checkPermissions()
     }
 
+    /**
+     * Re-checks accessibility service and overlay permissions.
+     * Should be called on Activity resume to pick up changes made in system settings.
+     */
     fun checkPermissions() {
-        val accessibilityEnabled = PermissionHelper.isAccessibilityServiceEnabled(
-            context,
+        val accessibilityOk = PermissionHelper.isAccessibilityServiceEnabled(
+            appContext,
             ClickerAccessibilityService::class.java
         )
-        val overlayGranted = PermissionHelper.isOverlayPermissionGranted(context)
-        _permissionsGranted.value = accessibilityEnabled && overlayGranted
+        val overlayOk = PermissionHelper.isOverlayPermissionGranted(appContext)
+        _permissionsGranted.value = accessibilityOk && overlayOk
     }
 }

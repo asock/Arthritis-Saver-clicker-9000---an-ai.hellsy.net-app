@@ -330,9 +330,7 @@ fun ProfileEditorScreen(
     // Action editor bottom sheet
     if (showActionSheet) {
         ActionEditorSheet(
-            sheetState = sheetState,
             action = editingAction,
-            profileId = profile?.id ?: 0L,
             onSave = { action ->
                 if (editingAction != null) {
                     viewModel.updateAction(action)
@@ -351,6 +349,9 @@ fun ProfileEditorScreen(
                     showActionSheet = false
                     editingAction = null
                 }
+            },
+            onPickCoordinates = {
+                // TODO: Launch TargetPickerOverlay via overlay service
             }
         )
     }
