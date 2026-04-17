@@ -142,8 +142,7 @@ fun HomeScreen(
                 items(profiles, key = { it.id }) { profile ->
                     ProfileCard(
                         profile = profile,
-                        isRunning = engineState == ClickEngine.EngineState.RUNNING &&
-                                clickEngine.currentProfile?.id == profile.id,
+                        isRunning = engineState == ClickEngine.EngineState.RUNNING,
                         onPlay = { viewModel.startProfile(profile) },
                         onEdit = { onNavigateToEditor(profile.id) },
                         onDelete = { viewModel.deleteProfile(profile) }
@@ -381,8 +380,3 @@ private fun formatMs(millis: Long): String = when {
     }
     else -> "${millis}ms"
 }
-
-// Private reference to click engine is not available in composable scope.
-// This is a placeholder for the card's isRunning logic; the actual engine
-// check is done at the call site via the ViewModel's engineState.
-private val clickEngine: ClickEngine? = null
