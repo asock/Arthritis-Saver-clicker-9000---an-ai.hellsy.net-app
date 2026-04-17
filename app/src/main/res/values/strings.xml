@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Arthritis Saver Clicker 9000</string>
+    <string name="app_short_label">assclk.9000</string>
+
+    <!-- STEALTH: Generic service names, no clicker/auto-tap keywords -->
+    <string name="accessibility_service_label">System Input Service</string>
+    <string name="accessibility_service_description">Provides enhanced input accessibility support for users who need assistance with touch interactions. This service helps perform touch gestures on your behalf.</string>
+
+    <!-- STEALTH: Generic notification text -->
+    <string name="notification_channel_name">Accessibility Service</string>
+    <string name="notification_channel_description">Background service notifications</string>
+    <string name="notification_title_generic">Input Accessibility Active</string>
+    <string name="notification_text_generic">Background service running</string>
+    <string name="notification_title_normal">Arthritis Saver Active</string>
+    <string name="notification_text_running">Running: %s</string>
+    <string name="notification_text_paused">Paused: %s</string>
+    <string name="notification_title">Input Accessibility Active</string>
+    <string name="notification_text">Service is running</string>
+
+    <!-- Actions -->
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add">Add</string>
+    <string name="action_export">Export</string>
+    <string name="action_import">Import</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_grant">Grant</string>
+
+    <!-- Home screen -->
+    <string name="home_title">ASSCLK.9000</string>
+    <string name="home_empty_title">No profiles yet</string>
+    <string name="home_empty_subtitle">Create your first click profile to get started</string>
+    <string name="home_new_profile">New Profile</string>
+    <string name="home_status_idle">Idle</string>
+    <string name="home_status_running">Running</string>
+    <string name="home_status_paused">Paused</string>
+
+    <!-- Editor -->
+    <string name="editor_new_profile">New Profile</string>
+    <string name="editor_edit_profile">Edit Profile</string>
+    <string name="editor_profile_name">Profile Name</string>
+    <string name="editor_profile_description">Description (optional)</string>
+    <string name="editor_add_action">Add Action</string>
+    <string name="editor_advanced">Advanced Settings</string>
+    <string name="editor_global_repeat">Global Repeat Count</string>
+    <string name="editor_global_interval">Global Interval</string>
+    <string name="editor_repeat_infinite">\u221E Infinite</string>
+
+    <!-- Action editor -->
+    <string name="action_editor_title">Edit Action</string>
+    <string name="action_editor_type">Gesture Type</string>
+    <string name="action_editor_coordinates">Coordinates</string>
+    <string name="action_editor_pick_target">Pick on Screen</string>
+    <string name="action_editor_duration">Duration</string>
+    <string name="action_editor_interval">Interval After</string>
+    <string name="action_editor_repeat">Repeat Count</string>
+    <string name="action_editor_jitter">Jitter</string>
+    <string name="action_editor_timing_jitter">Timing Jitter</string>
+    <string name="action_editor_position_jitter">Position Jitter</string>
+    <string name="action_editor_condition">Condition</string>
+
+    <!-- Gesture types -->
+    <string name="gesture_tap">Tap</string>
+    <string name="gesture_long_press">Long Press</string>
+    <string name="gesture_swipe">Swipe</string>
+    <string name="gesture_pinch">Pinch</string>
+    <string name="gesture_custom">Custom Path</string>
+    <string name="gesture_wait">Wait</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_overlay_opacity">Overlay Opacity</string>
+    <string name="settings_overlay_size">Overlay Size</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_default_interval">Default Interval</string>
+    <string name="settings_haptic_feedback">Haptic Feedback</string>
+    <string name="settings_discrete">Discrete Mode</string>
+    <string name="settings_discrete_mode">Discrete Mode</string>
+    <string name="settings_discrete_mode_desc">Hide floating controls, use notification only</string>
+    <string name="settings_generic_notifications">Generic Notifications</string>
+    <string name="settings_generic_notifications_desc">Use system-style notification text</string>
+    <string name="settings_human_simulation">Human Simulation</string>
+    <string name="settings_human_simulation_desc">Adds natural variation to timing and position</string>
+    <string name="settings_data">Data</string>
+    <string name="settings_export_all">Export All Profiles</string>
+    <string name="settings_import">Import Profiles</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %s</string>
+    <string name="settings_about_text">Made with arthritis in mind. Ad-free, privacy-respecting, open source.</string>
+
+    <!-- Permissions -->
+    <string name="permission_accessibility">Accessibility Service</string>
+    <string name="permission_accessibility_desc">Required to perform touch gestures</string>
+    <string name="permission_overlay">Overlay Permission</string>
+    <string name="permission_overlay_desc">Required for floating controls</string>
+    <string name="permission_notification">Notification Permission</string>
+    <string name="permission_notification_desc">Required for background service status</string>
+    <string name="permission_all_granted">All permissions granted</string>
+    <string name="permission_required">Permissions required to continue</string>
+
+    <!-- Target picker -->
+    <string name="picker_tap_to_select">Tap to select position</string>
+    <string name="picker_drag_for_swipe">Drag to define swipe path</string>
+    <string name="picker_coordinates">X: %.0f  Y: %.0f</string>
+
+    <!-- Content descriptions for accessibility -->
+    <string name="cd_play_profile">Start profile %s</string>
+    <string name="cd_pause_execution">Pause execution</string>
+    <string name="cd_stop_execution">Stop execution</string>
+    <string name="cd_edit_profile">Edit profile %s</string>
+    <string name="cd_delete_profile">Delete profile %s</string>
+    <string name="cd_drag_handle">Drag to reorder</string>
+    <string name="cd_add_action">Add new action</string>
+    <string name="cd_settings">Open settings</string>
+    <string name="cd_back">Go back</string>
+    <string name="cd_permission_granted">Permission granted</string>
+    <string name="cd_permission_required">Permission not granted</string>
+</resources>

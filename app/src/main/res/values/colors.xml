@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- CRT Purple Hacker Palette -->
+    <color name="crt_purple">#FFBB33FF</color>
+    <color name="crt_purple_dark">#FF7B1FA2</color>
+    <color name="crt_magenta">#FFFF33CC</color>
+    <color name="crt_green">#FF33FF33</color>
+    <color name="crt_amber">#FFFFBB33</color>
+    <color name="crt_red">#FFFF3333</color>
+    <color name="crt_background">#FF0D0D1A</color>
+    <color name="crt_surface">#FF1A1A2E</color>
+    <color name="crt_surface_variant">#FF252540</color>
+    <color name="crt_on_background">#FFE0E0FF</color>
+    <color name="crt_on_surface">#FFCCCCFF</color>
+</resources>

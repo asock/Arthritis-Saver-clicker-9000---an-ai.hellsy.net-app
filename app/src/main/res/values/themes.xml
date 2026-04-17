@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ArthritisSaverClicker9000" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@color/crt_background</item>
+        <item name="android:navigationBarColor">@color/crt_background</item>
+        <item name="android:windowBackground">@color/crt_background</item>
+    </style>
+</resources>
